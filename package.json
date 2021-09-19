@@ -1,9 +1,9 @@
 {
-  "name": "@metapages/metaframe-javascript",
-  "version": "0.0.7",
+  "name": "@metapages/metaframe-babylon.js",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/metapages/metaframe-javascript"
+    "url": "https://github.com/metapages/metaframe-babylon.js"
   },
   "files": [
     "dist/**/*",
@@ -12,7 +12,7 @@
   "type": "module",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
-  "homepage": "https://github.com/metapages/metaframe-javascript/tree/main/docs#readme",
+  "homepage": "https://github.com/metapages/metaframe-babylon.js/tree/main/docs#readme",
   "scripts": {
     "note": "echo 'use just. See README.md'"
   },
