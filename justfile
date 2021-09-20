@@ -69,7 +69,7 @@ _dev: _ensure_npm_modules (_tsc "--build")
 build: (_tsc "--build") _browser_assets_build _npm_build
 
 # Test: currently bare minimum: only building. Need proper test harness.
-@test: _npm_build
+@test: (_tsc "--build")
 
 # Publish to github pages.
 publish npmversionargs="patch": _ensureGitPorcelain test (_npm_version npmversionargs) _githubpages_publish
