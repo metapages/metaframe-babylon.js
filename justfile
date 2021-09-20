@@ -115,7 +115,7 @@ clean:
     rm -rf .certs dist
 
 # Rebuild the client on changes, but do not serve
-watch BUILD_SUB_DIR="./":
+watch BUILD_SUB_DIR="":
     watchexec -w src -w tsconfig.json -w package.json -w vite.config.ts -- just _npm_build
 
 # Watch and serve browser client. Can't use vite to serve: https://github.com/vitejs/vite/issues/2754
@@ -169,7 +169,7 @@ _npm_publish: _require_NPM_TOKEN _npm_build
         fi
     fi
 
-    echo -e "  👉 PUBLISHING npm version $VERSION"
+    echo -e "  👉 PUBLISHING npm vgersion $VERSION"
     if [ ! -f .npmrc ]; then
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
     fi
@@ -179,7 +179,7 @@ _npm_publish: _require_NPM_TOKEN _npm_build
 _browser_assets_build BUILD_SUB_DIR="": _ensure_npm_modules
     mkdir -p docs/{{BUILD_SUB_DIR}}
     find docs/{{BUILD_SUB_DIR}} -maxdepth 1 -type f -exec rm "{}" \;
-    rm -rf docs/{{BUILD_SUB_DIR}}/assets
+    rm -rf $(echo "docs/{{BUILD_SUB_DIR}}/assets" | sed s#//*#/#g)
     BUILD_SUB_DIR={{BUILD_SUB_DIR}} {{vite}} build --mode=production
 
 # compile typescript src, may or may not emit artifacts
