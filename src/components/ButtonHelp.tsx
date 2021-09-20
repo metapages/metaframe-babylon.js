@@ -12,7 +12,8 @@ import { isIframe } from "@metapages/metaframe-hook";
 import { QuestionIcon } from "@chakra-ui/icons";
 
 export const ButtonHelp: FunctionalComponent<{ url?: string }> = ({ url }) => {
-  const [open, setOpen] = useState<boolean>(isIframe() ? false : true);
+  // const [open, setOpen] = useState<boolean>(isIframe() ? false : true);
+  const [open, setOpen] = useState<boolean>(false);
 
   url = url
     ? url
@@ -29,9 +30,9 @@ export const ButtonHelp: FunctionalComponent<{ url?: string }> = ({ url }) => {
         aria-label="Help"
         // @ts-ignore
         icon={<QuestionIcon />}
-        size="lg"
+        size="md"
         onClick={onClick}
-        mr="4"
+        mr="2"
       />
       <HelpPanel url={url} isOpen={open} setOpen={setOpen} />
     </>

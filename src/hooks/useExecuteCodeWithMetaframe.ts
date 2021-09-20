@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "preact/hooks";
 import { execJsCode } from "../hooks/codeHooks";
 import { useStore } from "../store";
 import { useMetaframe } from "@metapages/metaframe-hook";
+import * as BABYLON from 'babylonjs';
 
 // Exports lazy code executor
 export const useExecuteCodeWithMetaframe: () => [
@@ -43,6 +44,7 @@ export const useExecuteCodeWithMetaframe: () => [
       try {
         const result = await execJsCode(code, {
           metaframe: metaframeObject.metaframe,
+          BABYLON,
         });
         setResult(result);
       } catch (err) {
