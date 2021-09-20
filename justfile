@@ -232,7 +232,7 @@ _githubpages_publish: _ensureGitPorcelain
 
     git checkout gh-pages
 
-    git rebase --strategy recursive --strategy-option theirs main
+    git rebase --strategy recursive --strategy-option theirs ${CURRENT_BRANCH}
 
     # Then build
     just _browser_assets_build ./v$(cat package.json | jq -r .version)
