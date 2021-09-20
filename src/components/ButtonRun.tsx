@@ -1,16 +1,14 @@
 import { FunctionalComponent } from "preact";
-import { useCallback } from "preact/hooks";
-import { Button } from "@chakra-ui/react";
-import {
-  MetaframeObject,
-  useMetaframe,
-  useHashParamBase64,
-} from "@metapages/metaframe-hook";
+import { useCallback, useEffect } from "preact/hooks";
+import { IconButton } from "@chakra-ui/react";
+import { CheckIcon, EditIcon } from "@chakra-ui/icons";
+import { useHashParam, useHashParamBase64 } from "@metapages/metaframe-hook";
 import { useStore } from "../store";
 import { useExecuteCodeWithMetaframe } from "../hooks/useExecuteCodeWithMetaframe";
 
 export const ButtonRun: FunctionalComponent = () => {
-  const metaframe: MetaframeObject = useMetaframe();
+  const [ mode, setMode ] = useHashParam("mode");
+  // const setMode = useStore((state) => state.setMode);
   const isRunning = useStore((state) => state.running);
   const codeInStore = useStore((state) => state.code);
   const [runCode] = useExecuteCodeWithMetaframe();
@@ -21,28 +19,28 @@ export const ButtonRun: FunctionalComponent = () => {
     undefined
   );
 
-  const onRun = useCallback(() => {
+  const onClick = useCallback(() => {
     // If the values are different, update, this will trigger a new execution
     if (valueHashParam !== codeInStore) {
       setValueHashParam(codeInStore);
-    } else {
-      // The code values are the same, but the user clicked the button, so execute
-      if (runCode) {
-        runCode(codeInStore);
-      }
     }
-  }, [
-    metaframe.setOutputs,
-    isRunning,
-    codeInStore,
-    valueHashParam,
-    runCode,
-    setValueHashParam,
-  ]);
+    setMode(mode === "editing" ? "running" : "editing");
+  }, [mode, setMode, codeInStore, valueHashParam, setValueHashParam]);
+
+  useEffect(() => {
+    // The code values are the same, but the user clicked the button, so execute
+    if (mode === "running" && codeInStore && runCode) {
+      runCode(codeInStore);
+    }
+  }, [mode, codeInStore, runCode]);
 
   return (
-    <Button colorScheme="blue" onClick={onRun}>
-      Save + Run
-    </Button>
+    <IconButton
+      aria-label="edit/run"
+      colorScheme={mode === "editing" ? "green" : "blue"}
+      onClick={onClick}
+      icon={mode === "editing" ? <CheckIcon /> : <EditIcon /> }
+      size="md"
+    />
   );
 };

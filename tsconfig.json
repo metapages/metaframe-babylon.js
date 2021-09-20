@@ -36,7 +36,7 @@
     "strictNullChecks": true,
     "target": "ESNext",
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "babylonjs"],
   },
   "exclude": ["node_modules", "dist"],
   "include": ["./src/**/*"]

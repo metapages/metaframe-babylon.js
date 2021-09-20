@@ -24,7 +24,7 @@ export const Editor: FunctionalComponent<EditorProps> = ({
       onChange={setValue}
       value={value}
       width="100%"
-      height="99vh"
+      height="70vh"
     />
   );
 };

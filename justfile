@@ -40,6 +40,7 @@ _help:
         echo -e ""
         echo -e "    Github  URL 🔗 {{green}}$(cat package.json | jq -r '.repository.url'){{normal}}"
         echo -e "    Publish URL 🔗 {{green}}https://$(cat package.json | jq -r '.name' | sd '/.*' '' | sd '@' '').github.io/{{PACKAGE_NAME_SHORT}}/{{normal}}"
+        echo -e "    Develop URL 🔗 {{green}}https://{{APP_FQDN}}:{{APP_PORT}}/{{normal}}"
         echo -e ""
     else
         just _docker;
@@ -231,7 +232,7 @@ _githubpages_publish: _ensureGitPorcelain
 
     git checkout gh-pages
 
-    git rebase --strategy recursive --strategy-option theirs main
+    git rebase --strategy recursive --strategy-option theirs ${CURRENT_BRANCH}
 
     # Then build
     just _browser_assets_build ./v$(cat package.json | jq -r .version)
@@ -240,7 +241,9 @@ _githubpages_publish: _ensureGitPorcelain
     # Now commit and push
     git add --all --force docs
     git commit -m "site v$(cat package.json | jq -r .version)"
-    git push -uf origin gh-pages
+    # This command could fail if there are no changes, in any case, reset
+    # back to the original ${CURRENT_BRANCH} so do not bail if a fail
+    git push -uf origin gh-pages || true
 
     # Return to the original branch
     git checkout ${CURRENT_BRANCH}
