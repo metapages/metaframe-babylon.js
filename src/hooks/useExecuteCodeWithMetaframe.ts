@@ -3,6 +3,7 @@ import { execJsCode } from "../hooks/codeHooks";
 import { useStore } from "../store";
 import { useMetaframe } from "@metapages/metaframe-hook";
 import * as BABYLON from 'babylonjs';
+import 'babylonjs-loaders';
 
 // Exports lazy code executor
 export const useExecuteCodeWithMetaframe: () => [
