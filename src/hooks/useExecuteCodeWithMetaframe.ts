@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "preact/hooks";
 import { execJsCode } from "../hooks/codeHooks";
 import { useStore } from "../store";
-import { useMetaframe } from "@metapages/metaframe-hook";
+import * as hashParamUtils from "@metapages/metaframe-hook";
 import * as BABYLON from 'babylonjs';
 import 'babylonjs-loaders';
 
@@ -11,7 +11,7 @@ export const useExecuteCodeWithMetaframe: () => [
   boolean,
   any
 ] = () => {
-  const metaframeObject = useMetaframe();
+  const metaframeObject = hashParamUtils.useMetaframe();
   const setRunning = useStore((state) => state.setRunning);
   const setResult = useStore((state) => state.setResult);
   const result = useStore((state) => state.result);
@@ -46,6 +46,7 @@ export const useExecuteCodeWithMetaframe: () => [
         const result = await execJsCode(code, {
           metaframe: metaframeObject.metaframe,
           BABYLON,
+          HASHTOOLS: hashParamUtils,
         });
         setResult(result);
       } catch (err) {
