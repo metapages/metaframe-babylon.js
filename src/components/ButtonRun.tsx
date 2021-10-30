@@ -1,17 +1,20 @@
 import { FunctionalComponent } from "preact";
-import { useCallback, useEffect } from "preact/hooks";
+import { useCallback } from "preact/hooks";
 import { IconButton } from "@chakra-ui/react";
-import { CheckIcon, EditIcon } from "@chakra-ui/icons";
-import { useHashParam, useHashParamBase64 } from "@metapages/metaframe-hook";
-import { useStore } from "../store";
-import { useExecuteCodeWithMetaframe } from "../hooks/useExecuteCodeWithMetaframe";
+import { EditIcon, CheckIcon } from "@chakra-ui/icons";
+
+import {
+  MetaframeObject,
+  useMetaframe,
+  useHashParamBase64,
+} from "@metapages/metaframe-hook";
+import { Mode, useStore } from "../store";
 
 export const ButtonRun: FunctionalComponent = () => {
-  const [ mode, setMode ] = useHashParam("mode");
-  // const setMode = useStore((state) => state.setMode);
-  const isRunning = useStore((state) => state.running);
+  const metaframe: MetaframeObject = useMetaframe();
+  const mode = useStore((state) => state.mode);
+  const setMode = useStore((state) => state.setMode);
   const codeInStore = useStore((state) => state.code);
-  const [runCode] = useExecuteCodeWithMetaframe();
 
   // Split these next two otherwise editing is too slow as it copies to/from the URL
   const [valueHashParam, setValueHashParam] = useHashParamBase64(
@@ -20,27 +23,42 @@ export const ButtonRun: FunctionalComponent = () => {
   );
 
   const onClick = useCallback(() => {
-    // If the values are different, update, this will trigger a new execution
-    if (valueHashParam !== codeInStore) {
-      setValueHashParam(codeInStore);
+    switch (mode) {
+      case Mode.Editing:
+        // If the values are different, update, this will trigger a new execution
+        if (valueHashParam !== codeInStore) {
+          setValueHashParam(codeInStore);
+        }
+        setMode(Mode.Running);
+        break;
+      case Mode.Finished:
+        setMode(Mode.Editing);
+        break;
+      case Mode.Running:
+        setMode(Mode.Editing);
+        break;
+      case Mode.Start:
+        break;
     }
-    setMode(mode === "editing" ? "running" : "editing");
-  }, [mode, setMode, codeInStore, valueHashParam, setValueHashParam]);
-
-  useEffect(() => {
-    // The code values are the same, but the user clicked the button, so execute
-    if (mode === "running" && codeInStore && runCode) {
-      runCode(codeInStore);
-    }
-  }, [mode, codeInStore, runCode]);
+  }, [
+    metaframe.metaframe,
+    codeInStore,
+    valueHashParam,
+    setValueHashParam,
+    mode,
+    setMode,
+  ]);
 
   return (
     <IconButton
-      aria-label="edit/run"
-      colorScheme={mode === "editing" ? "green" : "blue"}
-      onClick={onClick}
-      icon={mode === "editing" ? <CheckIcon /> : <EditIcon /> }
+      verticalAlign="top"
+      aria-label="Help"
+      colorScheme={mode === Mode.Editing ? "blue" : undefined}
+      // @ts-ignore
+      icon={mode === Mode.Editing ? <CheckIcon /> : <EditIcon />}
       size="md"
+      onClick={onClick}
+      mr="4"
     />
   );
 };
