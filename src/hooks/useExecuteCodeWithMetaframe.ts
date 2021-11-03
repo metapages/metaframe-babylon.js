@@ -1,21 +1,19 @@
 import { useCallback, useEffect } from "preact/hooks";
 import { execJsCode } from "../hooks/codeHooks";
-import { useStore } from "../store";
-import * as hashParamUtils from "@metapages/metaframe-hook";
-import * as BABYLON from 'babylonjs';
-import 'babylonjs-loaders';
+import { Mode, useStore } from "/@/store";
+import * as metaframeHooks from "@metapages/metaframe-hook";
+import * as BABYLON from "babylonjs";
+import "babylonjs-loaders";
 
 // Exports lazy code executor
 export const useExecuteCodeWithMetaframe: () => [
   (c: string | undefined) => Promise<void>,
-  boolean,
   any
 ] = () => {
-  const metaframeObject = hashParamUtils.useMetaframe();
-  const setRunning = useStore((state) => state.setRunning);
+  const metaframeObject = metaframeHooks.useMetaframe();
+  const setMode = useStore((state) => state.setMode);
   const setResult = useStore((state) => state.setResult);
   const result = useStore((state) => state.result);
-  const running = useStore((state) => state.running);
 
   // if new results, cancel existing running code
   useEffect(() => {
@@ -33,30 +31,29 @@ export const useExecuteCodeWithMetaframe: () => [
   const execute = useCallback(
     async (code: string | undefined) => {
       if (!code || code.trim().length === 0) {
-        setRunning(false);
+        setMode(Mode.Finished);
         setResult(undefined);
         return;
       }
       if (!metaframeObject.metaframe) {
         return;
       }
-      setRunning(true);
       setResult(undefined);
       try {
         const result = await execJsCode(code, {
           metaframe: metaframeObject.metaframe,
           BABYLON,
-          HASHTOOLS: hashParamUtils,
+          HASHTOOLS: metaframeHooks,
         });
         setResult(result);
       } catch (err) {
         console.error(err);
         setResult({ failure: { error: err } });
       }
-      setRunning(false);
+      setMode(Mode.Finished);
     },
-    [metaframeObject.metaframe, setRunning, setResult]
+    [metaframeObject.metaframe, setMode, setResult]
   );
 
-  return [execute, running, result];
+  return [execute, result];
 };

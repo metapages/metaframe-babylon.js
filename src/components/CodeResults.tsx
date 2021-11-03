@@ -5,17 +5,20 @@ import {
   AlertTitle,
   AlertDescription,
 } from "@chakra-ui/react";
-import { useStore } from "../store";
+import { useStore, Mode } from "../store";
 import { BeatLoader } from "react-spinners";
+import { useHashParamBoolean } from "@metapages/metaframe-hook";
 
 export const CodeResults: FunctionalComponent = () => {
-  const running = useStore((state) => state.running);
+  const mode = useStore((state) => state.mode);
   const result = useStore((state) => state.result);
+  // presentation mode means hide all the editing stuff
+  const [isPresentationMode] = useHashParamBoolean("presentation");
 
-  if (running) {
+  if (Mode.Running === mode) {
     return <BeatLoader size={8} color="blue" />;
   }
-  if (!result) {
+  if (!result || isPresentationMode) {
     return null;
   }
 
