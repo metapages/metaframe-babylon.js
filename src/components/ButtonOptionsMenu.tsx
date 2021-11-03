@@ -1,5 +1,6 @@
 import { FunctionalComponent } from "preact";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useCallback } from "preact/hooks";
+import { useHashParamJson } from "@metapages/metaframe-hook";
 import {
   Box,
   Drawer,
@@ -12,27 +13,54 @@ import {
   IconButton,
   Input,
   Select,
+  HStack,
+  Spacer,
   Switch,
   Text,
 } from "@chakra-ui/react";
 import { CheckIcon, CloseIcon, SettingsIcon } from "@chakra-ui/icons";
-import { useHashParamJson } from "@metapages/metaframe-hook";
 
-type OptionType = "string" | "boolean" | "option";
+export type OptionType = "string" | "boolean" | "option" | "number";
 
 export type Option = {
   name: string;
   displayName: string;
-  default?: string | boolean;
+  default?: string | boolean | number;
   type?: OptionType; // defaults to string
   options?: string[];
-  validator?: (val: string | boolean) => string | undefined; // undefined == 👍, string is an error message
-  map?: (val: string | boolean) => any; // convert value to proper type
+  // if the type is "option" and there are suboptions then
+  // the suboptions are added to all options
+  suboptions?: { [name in string]: Option[] };
+  validator?: (val: string | boolean | number) => string | undefined; // undefined == 👍, string is an error message
+  map?: (val: string | boolean | number) => any; // convert value to proper type
 };
 
-export const OptionsMenuButton: FunctionalComponent<{ options: Option[] }> = ({
-  options,
-}) => {
+const useOptions = (options: Option[], chosenOptions?: GenericOptions) => {
+  const [optionsState, setOptionsState] = useState<Option[]>(options);
+
+  useEffect(() => {
+    let newOptions = options.concat([]);
+    options.forEach((option) => {
+      if (option.type === "option" && option.suboptions && chosenOptions) {
+        Object.keys(chosenOptions).forEach((key) => {
+          const val = chosenOptions[key] as string | undefined;
+          if (val && option?.suboptions?.[val]) {
+            newOptions = newOptions.concat(option.suboptions[val]);
+          }
+        });
+      }
+    });
+
+    setOptionsState(newOptions);
+  }, [chosenOptions, setOptionsState, options]);
+
+  return [optionsState];
+};
+
+export const ButtonOptionsMenu: FunctionalComponent<{
+  options: Option[];
+  hashkey?: string;
+}> = ({ hashkey, options }) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const onClick = useCallback(() => {
@@ -46,26 +74,32 @@ export const OptionsMenuButton: FunctionalComponent<{ options: Option[] }> = ({
         aria-label="Metaframe settings"
         // @ts-ignore
         icon={<SettingsIcon />}
-        // size="lg"
+        size="md"
         onClick={onClick}
       />
-      <OptionsMenu isOpen={open} setOpen={setOpen} options={options} />
+      <OptionsMenu
+        hashkey={hashkey}
+        isOpen={open}
+        setOpen={setOpen}
+        options={options}
+      />
     </>
   );
 };
 
-type GenericOptions = Record<string, string | boolean>;
+export type GenericOptions = Record<string, string | boolean | number>;
 
 const OptionsMenu: FunctionalComponent<{
   isOpen: boolean;
   setOpen: (open: boolean) => void;
   options: Option[];
-}> = ({ isOpen, setOpen, options }) => {
+  hashkey?: string;
+}> = ({ hashkey, isOpen, setOpen, options }) => {
   // isOpen = true; // for debugging/developing
 
   const [optionsInHashParams, setOptionsInHashParams] =
     useHashParamJson<GenericOptions>(
-      "options",
+      hashkey ? hashkey : "options",
       Object.fromEntries(
         options
           .filter((o) => o.default)
@@ -76,20 +110,39 @@ const OptionsMenu: FunctionalComponent<{
   const [localOptions, setLocalOptions] = useState<GenericOptions>(
     optionsInHashParams || {}
   );
-  const [errors, setErrors] =
-    useState<Record<string, string> | undefined>(undefined);
+
+  const [filteredOptions] = useOptions(options, localOptions);
+
+  const [errors, setErrors] = useState<Record<string, string> | undefined>(
+    undefined
+  );
 
   const handleOnChange = useCallback(
     (event: any) => {
       const { name, value } = event.target as HTMLInputElement;
-      const option = options.find((o) => o.name === name) as Option; // assume we always find one since we configured it from options
+      let flattenedOptions = options.concat([]);
+      options.forEach((o) => {
+        if (o.suboptions) {
+          const arrays = Object.values(o.suboptions);
+          arrays.forEach(
+            (oo) => (flattenedOptions = flattenedOptions.concat(oo))
+          );
+        }
+      });
+
+      const option = flattenedOptions.find((o) => o.name === name) as Option; // assume we always find one since we configured it from options
+      // save boolean true as "1"
+      if (!option) {
+        console.error(`No option found for name=${name}`);
+        return;
+      }
       if (option.type === "boolean") {
         setLocalOptions({ ...localOptions, [name]: value === "1" });
       } else {
         setLocalOptions({ ...localOptions, [name]: value });
       }
     },
-    [localOptions, setLocalOptions]
+    [localOptions, setLocalOptions, options]
   );
 
   const onClose = useCallback(() => {
@@ -118,9 +171,22 @@ const OptionsMenu: FunctionalComponent<{
     // now maybe map to other values
     const convertedOptions: GenericOptions = {};
     Object.keys(localOptions).forEach((key) => {
-      const option: Option | undefined = options.find((o) => o.name === key);
-      if (option && option.map) {
-        convertedOptions[key] = option.map(localOptions[key]);
+      const option: Option | undefined = filteredOptions.find(
+        (o) => o.name === key
+      );
+      if (option) {
+        if (option.map) {
+          convertedOptions[key] = option.map(localOptions[key]);
+        } else {
+          if (option.type === "boolean") {
+            convertedOptions[key] =
+              localOptions[key] === true ||
+              localOptions[key] === "1" ||
+              localOptions[key] === "true";
+          } else {
+            convertedOptions[key] = localOptions[key];
+          }
+        }
       } else {
         convertedOptions[key] = localOptions[key];
       }
@@ -133,12 +199,16 @@ const OptionsMenu: FunctionalComponent<{
     isOpen,
     options,
     localOptions,
+    filteredOptions,
     setOptionsInHashParams,
     setErrors,
   ]);
 
   // preact complains in dev mode if this is moved out of a functional component
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
     const onKeyup = (e: KeyboardEvent) => {
       if (e.key === "Enter" && isOpen) onCloseAndAccept();
     };
@@ -157,14 +227,14 @@ const OptionsMenu: FunctionalComponent<{
           </DrawerHeader>
           <DrawerBody>
             <Box
-              maxW="100%"
+              maxW="80%"
               p={2}
               borderWidth="4px"
               borderRadius="lg"
               overflow="hidden"
             >
               <Grid templateColumns="repeat(12, 1fr)" gap={6}>
-                {options.map((option) => (
+                {filteredOptions.map((option) => (
                   <>
                     <GridItem rowSpan={1} colSpan={4}>
                       <Box
@@ -193,28 +263,27 @@ const OptionsMenu: FunctionalComponent<{
                 <GridItem rowSpan={1} colSpan={12}></GridItem>
                 <GridItem rowSpan={1} colSpan={12}></GridItem>
                 <GridItem rowSpan={1} colSpan={12}></GridItem>
-                <GridItem rowSpan={1} colSpan={10}></GridItem>
-
-                <GridItem rowSpan={1} colSpan={1}>
-                  {/*
+                <GridItem rowSpan={1} colSpan={12}>
+                  <HStack spacing={2} direction="row">
+                    <Spacer />
+                    {/*
                       // @ts-ignore */}
-                  <IconButton
-                    size="lg"
-                    color="red"
-                    icon={(<CloseIcon />) as any}
-                    onClick={onClose}
-                  />
-                </GridItem>
+                    <IconButton
+                      size="lg"
+                      color="red"
+                      icon={(<CloseIcon />) as any}
+                      onClick={onClose}
+                    />
 
-                <GridItem rowSpan={1} colSpan={1}>
-                  {/*
+                    {/*
                       // @ts-ignore */}
-                  <IconButton
-                    size="lg"
-                    color="green"
-                    icon={(<CheckIcon />) as any}
-                    onClick={onCloseAndAccept}
-                  />
+                    <IconButton
+                      size="lg"
+                      color="green"
+                      icon={(<CheckIcon />) as any}
+                      onClick={onCloseAndAccept}
+                    />
+                  </HStack>
                 </GridItem>
               </Grid>
             </Box>
@@ -258,7 +327,7 @@ const renderInput = (option: Option, value: any, onChange: any) => {
             name={option.name}
             type="text"
             placeholder=""
-            value={value}
+            value={value === undefined ? option.default : value}
             onInput={onChange}
           />
         </Box>
