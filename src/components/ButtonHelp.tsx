@@ -8,12 +8,15 @@ import {
   IconButton,
   DrawerCloseButton,
 } from "@chakra-ui/react";
-import { isIframe } from "@metapages/metaframe-hook";
+import { isIframe, getHashParamsInWindow } from "@metapages/metaframe-hook";
 import { QuestionIcon } from "@chakra-ui/icons";
 
 export const ButtonHelp: FunctionalComponent<{ url?: string }> = ({ url }) => {
-  // const [open, setOpen] = useState<boolean>(isIframe() ? false : true);
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(
+    isIframe() || getHashParamsInWindow()[1]["text"] !== undefined
+      ? false
+      : true
+  );
 
   url = url
     ? url
@@ -32,7 +35,7 @@ export const ButtonHelp: FunctionalComponent<{ url?: string }> = ({ url }) => {
         icon={<QuestionIcon />}
         size="md"
         onClick={onClick}
-        mr="2"
+        mr="4"
       />
       <HelpPanel url={url} isOpen={open} setOpen={setOpen} />
     </>
@@ -44,6 +47,7 @@ const HelpPanel: FunctionalComponent<{
   isOpen: boolean;
   setOpen: (open: boolean) => void;
 }> = ({ isOpen, setOpen, url }) => {
+  console.log("isOpen", isOpen);
   const onClose = useCallback(() => {
     setOpen(!isOpen);
   }, [setOpen, isOpen]);

@@ -22,20 +22,9 @@ import { Mode, useStore } from "/@/store";
 import { useExecuteCodeWithMetaframe } from "/@/hooks/useExecuteCodeWithMetaframe";
 import { ButtonRun } from "/@/components/ButtonRun";
 import { ButtonHelp } from "/@/components/ButtonHelp";
+import { ButtonPresentationMode } from "../components/ButtonPresentationMode";
 
 const appOptions: Option[] = [
-  {
-    name: "canvasWidth",
-    displayName: "Canvas width",
-    default: 300,
-    type: "number",
-  },
-  {
-    name: "canvasHeight",
-    displayName: "Canvas height",
-    default: 100,
-    type: "number",
-  },
   {
     name: "theme",
     displayName: "Light/Dark theme",
@@ -44,27 +33,23 @@ const appOptions: Option[] = [
     options: ["light", "vs-dark"],
   },
   {
-    name: "stretch",
-    displayName: "Stretch to fill container",
+    name: "menuAtBottom",
+    displayName: "Place menu bar at bottom of render content",
     default: false,
     type: "boolean",
   },
 ];
 
 type OptionBlob = {
-  canvasWidth: number;
-  canvasHeight: number;
   theme: string;
-  stretch: boolean;
+  menuAtBottom: boolean;
 };
 
 export const Route: FunctionalComponent = () => {
   // metaframe configuration
   const [options] = useHashParamJson<OptionBlob>("options", {
-    canvasWidth: 300,
-    canvasHeight: 100,
     theme: "light",
-    stretch: false,
+    menuAtBottom: false,
   });
   // presentation mode means hide all the editing stuff
   const [isPresentationMode] = useHashParamBoolean("presentation");
@@ -109,13 +94,8 @@ export const Route: FunctionalComponent = () => {
 
   const canvas = (
     <canvas
-      style={
-        options?.stretch
-          ? { width: "100%", minWidth: options?.canvasWidth || 300 }
-          : undefined
-      }
-      width={options?.canvasWidth || 300}
-      height={options?.canvasHeight || 100}
+      width={document.body.clientWidth}
+      height={document.body.clientHeight}
       id="renderCanvas"
     />
   );
@@ -128,6 +108,7 @@ export const Route: FunctionalComponent = () => {
       <Flex width="100%">
         <ButtonRun />
         <Spacer />
+        <ButtonPresentationMode />
         <ButtonHelp />
         <ButtonOptionsMenu options={appOptions} />
       </Flex>
@@ -138,6 +119,8 @@ export const Route: FunctionalComponent = () => {
   return (
     <Box w="100%" p={2}>
       <VStack spacing={2} alignItems="flex-start">
+        {options?.menuAtBottom ? null : <Box w="100%">{menu}</Box>}
+
         {mode === Mode.Editing ? (
           <Box w="100%">
             <Editor
@@ -151,7 +134,7 @@ export const Route: FunctionalComponent = () => {
           canvas
         ) : null}
 
-        <Box w="30%">{menu}</Box>
+        {options?.menuAtBottom ? <Box w="100%">{menu}</Box> : null}
       </VStack>
     </Box>
   );
