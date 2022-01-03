@@ -7,8 +7,10 @@
 This metaframe will execute javascript from code embedded in the URL hash params and use the canvas to display 3D scenes.
 
   - No multi files, just a single script
+  - The canvas is sized to the entire width+height of the window.
   - There is a `div` with the id `render` for adding your own elements.
-  - If hash param `presentation=true` then the edit and buttons and feedback will be hidden.
+  - If the hash param exists: `presentation=true` then the edit and buttons and feedback will be hidden.
+    - This is enabled with the "eye" icon, but reverting does not work nicely, you have to manually remove the above hash param manually.
 
 **Globals:**
 
