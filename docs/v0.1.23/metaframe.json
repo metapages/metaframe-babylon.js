@@ -1,0 +1,12 @@
+{
+	"version": "0.3",
+	"metadata": {
+		"title": "Run javascript code safely and render 3D scenes with babylon.js"
+	},
+	"inputs": {
+		"script.js": {}
+	},
+    "outputs": {
+		"execution": {}
+	}
+}
